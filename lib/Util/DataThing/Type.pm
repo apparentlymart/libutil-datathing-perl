@@ -13,6 +13,7 @@ use Carp qw(croak confess);
 use overload "<=>" => \&_compare, '""' => sub { $_[0]->{display_name} };
 use Scalar::Util;
 use Sub::Name;
+use MRO::Compat;
 
 my %primitives;
 my %primitive_coerce;
@@ -114,19 +115,64 @@ sub object_class {
     return $_[0]->{object_class};
 }
 
+sub for_each_property {
+    my ($self, $code) = @_;
+
+    return unless $self->is_object;
+
+    my $object_class = $self->object_class;
+
+    my $all_classes = mro::get_linear_isa($object_class);
+
+    for (my $i = scalar(@$all_classes) - 1; $i >= 0; $i--) {
+        my $class = $all_classes->[$i];
+        my $properties = $object_properties{$class};
+        next unless $properties;
+
+        map { $code->($_, $properties->{$_}) } keys %$properties;
+    }
+
+}
+
 sub properties {
     my ($self) = @_;
 
-    # FIXME: This needs to look at parent classes too.
     return {} unless $self->is_object;
-    my $object_class = $self->object_class;
-    return $object_properties{$object_class};
+
+    my $ret = {};
+    $self->for_each_property(sub {
+        $ret->{$_[0]} = $_[1];
+    });
+    return $ret;
 }
 
 sub property_type {
     my ($self, $property_name) = @_;
 
-    return $self->properties->{$property_name};
+    return undef unless $self->is_object;
+
+    my $want_array = wantarray;
+
+    my $object_class = $self->object_class;
+
+    my $all_classes = mro::get_linear_isa($object_class);
+
+    for (my $i = 0; $i < scalar(@$all_classes); $i++) {
+        my $class = $all_classes->[$i];
+        my $properties = $object_properties{$class};
+        next unless $properties;
+
+        if ($want_array) {
+            return $properties->{$property_name}, $class if defined($properties->{$property_name});
+        }
+        else {
+            return $properties->{$property_name} if defined($properties->{$property_name});
+        }
+    }
+
+    # If we fall out here then no parent class has the
+    # property we're looking for.
+    return undef;
 }
 
 # Arrays and maps are not yet supported

@@ -63,6 +63,9 @@ sub new {
 sub register_property {
     my ($class, $name, $type) = @_;
 
+    my ($existing_type, $existing_class) = $class->type->property_type($name);
+    croak("$class tried to override property ${existing_class}->$name") if $existing_type;
+
     # Create an accessor for this field
     {
         no strict 'refs';
