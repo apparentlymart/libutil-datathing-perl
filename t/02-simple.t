@@ -3,8 +3,6 @@ use strict;
 use warnings;
 use Test::More tests => 12;
 
-use Data::Dumper;
-
 my $thing = Util::DataThing::Test::Class1->new(
     some_string => "Hello",
 );
