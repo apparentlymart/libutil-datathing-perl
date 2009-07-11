@@ -1,6 +1,7 @@
 t/01-use.t
 t/02-simple.t
 t/03-nested.t
+t/04-inherited.t
 MANIFEST
 Makefile.PL
 lib/Util/DataThing/Type.pm
