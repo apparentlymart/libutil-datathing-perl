@@ -76,10 +76,11 @@ sub register_property {
             if (@_) {
                 my $value = shift;
                 croak("Unexpected extra arguments to ${class}->${name}") if @_;
-                return $self->{data}{$name} = $coerce_in->($value, $type);
+                return $self->{data}{$name} = defined($value) ? $coerce_in->($value, $type) : undef;
             }
             else {
-                return $coerce_out->($self->{data}{$name}, $type);
+                my $value = $self->{data}{$name};
+                return defined($value) ? $coerce_out->($value, $type) : undef;
             }
         };
     }
