@@ -67,8 +67,8 @@ sub register_property {
         no strict 'refs';
         my $full_name = "${class}::${name}";
 
-        my $coerce_in = $type->coerce_in;
-        my $coerce_out = $type->coerce_out;
+        my $coerce_in = $type->coerce_in or croak("Invalid type $type: it has no coerce_in!");
+        my $coerce_out = $type->coerce_out or croak("Invalid type $type: it has no coerce_out!");
 
         *{$full_name} = sub {
             my $self = shift;

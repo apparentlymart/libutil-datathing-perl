@@ -10,31 +10,38 @@ package Util::DataThing::Type;
 use strict;
 use warnings;
 use Carp qw(croak confess);
-use overload "<=>" => \&_compare;
+use overload "<=>" => \&_compare, '""' => sub { $_[0]->{display_name} };
 use Scalar::Util;
 
-my %primitives = ();
-my %primitive_coerce = (
-    string => sub {
-        return "".$_[0];
-    },
-    integer => sub {
-        return int($_[0])+0;
-    },
-    float => sub {
-        return $_[0]+0;
-    },
-    boolean => sub {
-        return $_[0] ? 1 : 0;
-    },
-    any => sub {
-        return $_[0];
-    },
-);
-my %objects = ();
-my %object_properties = ();
+my %primitives;
+my %primitive_coerce;
+my %objects;
+my %object_properties;
 
 BEGIN {
+
+    %primitives = ();
+    %primitive_coerce = (
+        string => sub {
+            return "".$_[0];
+        },
+        integer => sub {
+            return int($_[0])+0;
+        },
+        float => sub {
+            return $_[0]+0;
+        },
+        boolean => sub {
+            return $_[0] ? 1 : 0;
+        },
+        any => sub {
+            return $_[0];
+        },
+    );
+    %objects = ();
+    %object_properties = ();
+
+
     foreach my $type_name (qw(string integer float boolean any)) {
         my $obj = bless {}, __PACKAGE__;
         $obj->{display_name} = '('.$type_name.')';
