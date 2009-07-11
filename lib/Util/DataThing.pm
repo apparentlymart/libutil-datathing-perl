@@ -41,6 +41,7 @@ use strict;
 use warnings;
 use Util::DataThing::Type;
 use Carp qw(croak);
+use Sub::Name;
 
 our $VERSION = "0.01_01";
 
@@ -67,10 +68,10 @@ sub register_property {
         no strict 'refs';
         my $full_name = "${class}::${name}";
 
-        my $coerce_in = $type->coerce_in or croak("Invalid type $type: it has no coerce_in!");
-        my $coerce_out = $type->coerce_out or croak("Invalid type $type: it has no coerce_out!");
+        my $coerce_in = $type->coerce_in;
+        my $coerce_out = $type->coerce_out;
 
-        *{$full_name} = sub {
+        my $method = sub {
             my $self = shift;
 
             if (@_) {
@@ -83,6 +84,9 @@ sub register_property {
                 return defined($value) ? $coerce_out->($value, $type) : undef;
             }
         };
+
+        Sub::Name::subname($full_name, $method);
+        *{$full_name} = $method;
     }
 
     # Tell Util::DataThing::Type about this field using

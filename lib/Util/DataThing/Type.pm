@@ -12,6 +12,7 @@ use warnings;
 use Carp qw(croak confess);
 use overload "<=>" => \&_compare, '""' => sub { $_[0]->{display_name} };
 use Scalar::Util;
+use Sub::Name;
 
 my %primitives;
 my %primitive_coerce;
@@ -45,8 +46,10 @@ BEGIN {
     foreach my $type_name (qw(string integer float boolean any)) {
         my $obj = bless {}, __PACKAGE__;
         $obj->{display_name} = '('.$type_name.')';
-        $obj->{coerce_in} = $primitive_coerce{$type_name};
-        $obj->{coerce_out} = $primitive_coerce{$type_name};
+        my $coerce = $primitive_coerce{$type_name};
+        Sub::Name::subname("_coerce_".$type_name, $coerce);
+        $obj->{coerce_in} = $coerce;
+        $obj->{coerce_out} = $coerce;
 
         $primitives{$type_name} = $obj;
 
@@ -72,8 +75,6 @@ sub object {
 
     return $objects{$object_class} if defined($objects{$object_class});
 
-    croak "Can only create Util::DataThing::Type instances for subclasses of Util::DataThing" unless UNIVERSAL::isa($object_class, 'Util::DataThing');
-
     my $self = bless {}, __PACKAGE__;
     $self->{display_name} = $object_class;
     $self->{object_class} = $object_class;
@@ -81,7 +82,7 @@ sub object {
         my ($value) = @_;
 
         my $class = $self->object_class;
-        confess("Only $class objects can be assigned to this field") unless UNIVERSAL::isa($value, $class);
+        confess("Only $class objects can be assigned to this field.") unless UNIVERSAL::isa($value, $class);
 
         return $value->{data};
     };
@@ -89,8 +90,12 @@ sub object {
         my ($value) = @_;
 
         my $class = $self->object_class;
-        return $class->new($value);
+        my $obj = { data => $value };
+        return bless $obj, $class;
     };
+
+    Sub::Name::subname("_coerce_in_object", $self->{coerce_in});
+    Sub::Name::subname("_coerce_out_object", $self->{coerce_out});
 
     # Ensure that we only end up with one instance in memory for each
     # class at any time, but also that we don't end up with
