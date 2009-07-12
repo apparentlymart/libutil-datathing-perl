@@ -5,4 +5,5 @@ t/04-inherited.t
 MANIFEST
 Makefile.PL
 lib/Util/DataThing/Type.pm
+lib/Util/DataThing/Serializer.pm
 lib/Util/DataThing.pm
